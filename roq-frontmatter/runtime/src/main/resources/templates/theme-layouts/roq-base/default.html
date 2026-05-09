@@ -8,6 +8,7 @@
   {#favicon site/}
   {#bundle /}
   {/insert}
+  {#for headContrib in cdi:roqHeadContributions.forPage(page)}{headContrib}{/for}
   {#insert head /}
 </head>
 <body {#if page.data.body-class??}class="{page.data.body-class}"{/}>

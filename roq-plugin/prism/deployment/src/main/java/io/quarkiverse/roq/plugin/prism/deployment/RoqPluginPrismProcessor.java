@@ -10,6 +10,8 @@ import java.util.Properties;
 
 import org.jboss.logging.Logger;
 
+import io.quarkiverse.roq.plugin.prism.runtime.PrismHeadContributor;
+import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
@@ -31,6 +33,11 @@ public class RoqPluginPrismProcessor {
     @BuildStep
     FeatureBuildItem feature() {
         return new FeatureBuildItem(FEATURE);
+    }
+
+    @BuildStep
+    AdditionalBeanBuildItem registerHeadContributor() {
+        return AdditionalBeanBuildItem.unremovableOf(PrismHeadContributor.class);
     }
 
     @BuildStep

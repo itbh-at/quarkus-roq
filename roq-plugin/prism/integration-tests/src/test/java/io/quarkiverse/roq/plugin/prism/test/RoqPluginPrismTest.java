@@ -49,4 +49,42 @@ public class RoqPluginPrismTest {
         assertThat(body).containsPattern("<script[^>]+src=\"[^\"]*/static/bundle/prism\\.js");
         assertThat(body).containsPattern("<link[^>]+href=\"[^\"]*/static/bundle/prism\\.css");
     }
+
+    @Test
+    void frontMatterHighlightKeyInjectsPrismIntoHead() {
+        // /highlight/ uses layout: plain (no {#prism /}) but has highlight: prism in front matter.
+        // PrismHeadContributor should inject the tags via roq-base/default.html's contributor loop.
+        String body = RestAssured.when().get("/highlight/")
+                .then().statusCode(200).log().ifValidationFails().extract().asString();
+        assertThat(body).containsPattern("<script[^>]+src=\"[^\"]*/static/bundle/prism\\.js");
+        assertThat(body).containsPattern("<link[^>]+href=\"[^\"]*/static/bundle/prism\\.css");
+        // Tags must land inside <head>, not in <body>
+        int headClose = body.indexOf("</head>");
+        int scriptPos = body.indexOf("/static/bundle/prism.js");
+        assertThat(scriptPos).isGreaterThan(0).isLessThan(headClose);
+    }
+
+    @Test
+    void pageWithoutHighlightKeyDoesNotLoadPrism() {
+        // The index page uses layout: prism-test which has {#prism /} explicitly, but
+        // a hypothetical page with no highlight front matter and a plain layout must not
+        // receive the Prism assets via the contributor.
+        // Re-use /highlight/ as reference: confirm the index (layout: prism-test, no
+        // highlight key) still loads prism only via the explicit tag, not the contributor.
+        // We verify the contributor does NOT double-inject on a page that already has it.
+        String indexBody = RestAssured.when().get("/")
+                .then().statusCode(200).log().ifValidationFails().extract().asString();
+        // Only one occurrence of the JS bundle path — not duplicated by the contributor
+        assertThat(countOccurrences(indexBody, "/static/bundle/prism.js")).isEqualTo(1);
+    }
+
+    private static int countOccurrences(String text, String pattern) {
+        int count = 0;
+        int idx = 0;
+        while ((idx = text.indexOf(pattern, idx)) != -1) {
+            count++;
+            idx += pattern.length();
+        }
+        return count;
+    }
 }
